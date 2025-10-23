@@ -9,10 +9,11 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/stripe'  // Stripe webhook
 ]);
 
+// Remove 'async' here and use the provided 'auth' object directly
 export default clerkMiddleware((auth, req) => {
   // Protect routes that are NOT public
   if (!isPublicRoute(req)) {
-    auth().protect();
+    auth.protect(); // Use the 'auth' object passed to the function
   }
 });
 
