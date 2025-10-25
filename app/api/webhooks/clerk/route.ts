@@ -1,6 +1,6 @@
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import { NextRequest } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
+import { createClerkClient } from "@clerk/backend"; // ✅ use createClerkClient instead of clerkClient
 import { createUser, updateUser, deleteUser } from "@/lib/actions/user.actions";
 
 export async function POST(req: NextRequest) {
@@ -12,9 +12,14 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ Received webhook: ${eventType} for ${id}`);
 
+    // ✅ Create backend Clerk client instance
+    const clerkClient = createClerkClient({
+      secretKey: process.env.CLERK_SECRET_KEY!,
+    });
+
     switch (eventType) {
       case "user.created": {
-        const { email_addresses, first_name, last_name, image_url, username, id } = evt.data; // Include id here
+        const { email_addresses, first_name, last_name, image_url, username } = evt.data;
 
         const newUser = await createUser({
           clerkId: id ?? "",
@@ -25,34 +30,28 @@ export async function POST(req: NextRequest) {
           photo: image_url || "",
         });
 
-        // Ensure newUser has an _id before proceeding
         if (newUser?._id) {
-           // Await the client instance first
-           const client = await clerkClient();
-           // Then use the client instance
-           await client.users.updateUserMetadata(id, {
-             publicMetadata: { userId: newUser._id },
-           });
-        } else {
-           console.error("Failed to create user or newUser._id is missing");
-           // Optionally handle the error, maybe return a 500 status
+          await clerkClient.users.updateUserMetadata(id ?? "", {
+            publicMetadata: { userId: newUser._id },
+          });
         }
 
         return new Response("✅ user.created synced", { status: 200 });
       }
 
-      
+      case "user.updated": {
+        const { first_name, last_name, image_url, username } = evt.data;
+        await updateUser(id ?? "", {
+          firstName: first_name || "",
+          lastName: last_name || "",
+          username: username || "",
+          photo: image_url || "",
+        });
+        return new Response("✅ user.updated synced", { status: 200 });
+      }
+
       case "user.deleted": {
-        const { id } = evt.data; // Get id from evt.data
-
-        // Add a check to ensure 'id' is defined
-        if (!id) {
-          console.error("❌ Clerk webhook error: Missing user ID for user.deleted event");
-          return new Response("Error: Missing user ID", { status: 400 });
-        }
-
-        // Now TypeScript knows 'id' is a string
-        await deleteUser(id);
+        await deleteUser(id ?? "");
         return new Response("✅ user.deleted synced", { status: 200 });
       }
 
