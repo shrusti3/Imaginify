@@ -6,6 +6,7 @@ import { createUser, updateUser, deleteUser } from "@/lib/actions/user.actions";
 export async function POST(req: NextRequest) {
   try {
     // Clerk automatically verifies using CLERK_WEBHOOK_SIGNING_SECRET
+    console.log("SIGNING SECRET EXISTS:", !!process.env.CLERK_WEBHOOK_SIGNING_SECRET);
     const evt = await verifyWebhook(req);
     const { id } = evt.data;
     const eventType = evt.type;
