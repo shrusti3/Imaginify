@@ -4,16 +4,19 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
 
-const IBMPlex = IBM_Plex_Sans({ 
+const IBMPlex = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ['400', '500', '600', '700'],
   variable: '--font-ibm-plex'
 });
 
-
+// Modify the metadata object here
 export const metadata: Metadata = {
-  title: "Imaginify",
+  title: "Imaginify", // Sets the tab title
   description: "AI-powered image generator",
+  icons: {
+    icon: '/logo-icon.png', // Path relative to the public folder
+  },
 };
 
 export default function RootLayout({
@@ -25,12 +28,12 @@ export default function RootLayout({
     <ClerkProvider appearance={{
       variables:{colorPrimary:'#624cf5'}
     }}>
-    <html lang="en">
-      <body
-        className={cn("font-IBMPlex antialiased", IBMPlex.variable)}>
-        {children}
-      </body>
-    </html>
+      <html lang="en">
+        <body
+          className={cn("font-IBMPlex antialiased", IBMPlex.variable)}>
+          {children}
+        </body>
+      </html>
     </ClerkProvider>
   );
 }
