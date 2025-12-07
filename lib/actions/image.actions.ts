@@ -78,20 +78,6 @@ export async function deleteImage(imageId: string) {
 }
 
 // GET IMAGE
-export async function getImageById(imageId: string) {
-  try {
-    await connectToDatabase();
-
-    const image = await populateUser(Image.findById(imageId));
-
-    if(!image) throw new Error("Image not found");
-
-    return JSON.parse(JSON.stringify(image));
-  } catch (error) {
-    handleError(error)
-  }
-}
-
 // GET IMAGES
 export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
   limit?: number;
@@ -108,7 +94,8 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
       secure: true,
     })
 
-    let expression = 'folder=imaginify';
+    // CHANGE IS HERE: Update the folder name to 'Imaginify'
+    let expression = 'folder=imaginify'; 
 
     if (searchQuery) {
       expression += ` AND ${searchQuery}`
