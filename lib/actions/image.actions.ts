@@ -93,7 +93,11 @@ export async function getImageById(imageId: string) {
 }
 
 // GET IMAGES
-export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
+export async function getAllImages({
+  limit = 9,
+  page = 1,
+  searchQuery = "",
+}: {
   limit?: number;
   page: number;
   searchQuery?: string;
@@ -106,49 +110,46 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
       api_key: process.env.CLOUDINARY_API_KEY,
       api_secret: process.env.CLOUDINARY_API_SECRET,
       secure: true,
-    })
+    });
 
-    let expression = 'folder=imaginify';
+    // Cloudinary AI search
+    let expression = "folder=imaginify";
 
     if (searchQuery) {
-      expression += ` AND ${searchQuery}`
+      expression += ` AND tags=${searchQuery}`;
     }
 
     const { resources } = await cloudinary.search
       .expression(expression)
+      .with_field("tags") // Ensure tags are included
       .execute();
 
-    const resourceIds = resources.map((resource: any) => resource.public_id);
+    const resourceIds = resources.map((res: any) => res.public_id);
 
-    let query = {};
+    // Query Mongo only for metadata of these images
+    const skipAmount = (Number(page) - 1) * limit;
 
-    if(searchQuery) {
-      query = {
-        publicId: {
-          $in: resourceIds
-        }
-      }
-    }
-
-    const skipAmount = (Number(page) -1) * limit;
-
-    const images = await populateUser(Image.find(query))
+    const images = await populateUser(
+      Image.find(searchQuery ? { publicId: { $in: resourceIds } } : {})
+    )
       .sort({ updatedAt: -1 })
       .skip(skipAmount)
       .limit(limit);
-    
-    const totalImages = await Image.find(query).countDocuments();
-    const savedImages = await Image.find().countDocuments();
+
+    const totalImages = searchQuery
+      ? resourceIds.length
+      : await Image.countDocuments();
 
     return {
       data: JSON.parse(JSON.stringify(images)),
       totalPage: Math.ceil(totalImages / limit),
-      savedImages,
-    }
+      savedImages: totalImages,
+    };
   } catch (error) {
-    handleError(error)
+    handleError(error);
   }
 }
+
 
 // GET IMAGES BY USER
 export async function getUserImages({
