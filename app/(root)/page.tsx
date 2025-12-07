@@ -3,6 +3,7 @@ import { navLinks } from "@/constants"
 import { getAllImages } from "@/lib/actions/image.actions"
 import Image from "next/image"
 import Link from "next/link"
+import { Suspense } from "react" // <--- 1. Added import here
 
 const Home = async ({ searchParams }: SearchParamProps) => {
   const page = Number(searchParams?.page) || 1;
@@ -33,12 +34,15 @@ const Home = async ({ searchParams }: SearchParamProps) => {
       </section>
 
       <section className="sm:mt-12">
-        <Collection 
-          hasSearch={true}
-          images={images?.data}
-          totalPages={images?.totalPage}
-          page={page}
-        />
+        {/* 2. Wrapped Collection in Suspense */}
+        <Suspense fallback={<p>Loading...</p>}>
+          <Collection 
+            hasSearch={true}
+            images={images?.data}
+            totalPages={images?.totalPage}
+            page={page}
+          />
+        </Suspense>
       </section>
     </>
   )
