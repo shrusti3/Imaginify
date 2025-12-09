@@ -8,17 +8,12 @@ import { getUserById } from "@/lib/actions/user.actions";
 import { getImageById } from "@/lib/actions/image.actions";
 
 const Page = async ({ params: { id } }: SearchParamProps) => {
-  const { userId } = await auth();
+  const { userId } =  await auth();
 
   if (!userId) redirect("/sign-in");
 
   const user = await getUserById(userId);
   const image = await getImageById(id);
-
-  // ✅ ADD THIS BLOCK: Safe redirect if image is missing
-  if (!image) {
-    redirect("/");
-  }
 
   const transformation =
     transformationTypes[image.transformationType as TransformationTypeKey];
