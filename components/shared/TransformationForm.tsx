@@ -1,5 +1,5 @@
 "use client"
-
+ 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -34,7 +34,7 @@ import { getCldImageUrl } from "next-cloudinary"
 import { addImage, updateImage } from "@/lib/actions/image.actions"
 import { useRouter } from "next/navigation"
 import { InsufficientCreditsModal } from "./InsufficientCreditsModal"
-
+ 
 export const formSchema = z.object({
   title: z.string(),
   aspectRatio: z.string().optional(),
@@ -49,8 +49,7 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
   const [newTransformation, setNewTransformation] = useState<Transformations | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransforming, setIsTransforming] = useState(false);
-  // ensure transformationConfig is never undefined
-  const [transformationConfig, setTransformationConfig] = useState(config ?? {})
+  const [transformationConfig, setTransformationConfig] = useState(config)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -62,31 +61,23 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
     publicId: data?.publicId,
   } : defaultValues
 
-  // 1. Define your form.
-  const form = useForm<z.infer<typeof formSchema>>({
+   // 1. Define your form.
+   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   })
-
+ 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    try {
-      if(!(data || image)) {
-        throw new Error('No image selected');
-      }
-
-      // Create safe transformation URL (don't crash if config is null)
+    if(data || image) {
       const transformationUrl = getCldImageUrl({
         width: image?.width,
         height: image?.height,
         src: image?.publicId,
-        ...(transformationConfig || {}),
+        ...transformationConfig
       })
-
-      // Ensure config is plain JSON (no functions, undefined)
-      const safeConfig = JSON.parse(JSON.stringify(transformationConfig || {}));
 
       const imageData = {
         title: values.title,
@@ -94,7 +85,7 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
         transformationType: type,
         width: image?.width,
         height: image?.height,
-        config: safeConfig,
+        config: transformationConfig,
         secureURL: image?.secureURL,
         transformationURL: transformationUrl,
         aspectRatio: values.aspectRatio,
@@ -102,55 +93,45 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
         color: values.color,
       }
 
-      // LOG THE PAYLOAD FOR DEBUGGING: copy-paste this if it fails
-      console.log('[TransformationForm] submit payload:', {
-        action,
-        imageData,
-        userId,
-        dataId: data?._id
-      });
-
       if(action === 'Add') {
-        const newImage = await addImage({
-          image: imageData,
-          userId,
-          path: '/'
-        })
+        try {
+          const newImage = await addImage({
+            image: imageData,
+            userId,
+            path: '/'
+          })
 
-        if(newImage) {
-          form.reset()
-          setImage(data)
-          router.push(`/transformations/${newImage._id}`)
+          if(newImage) {
+            form.reset()
+            setImage(data)
+            router.push(`/transformations/${newImage._id}`)
+          }
+        } catch (error) {
+          console.log(error);
         }
       }
 
       if(action === 'Update') {
-        // Guard: ensure we have the DB id before updating
-        if(!data || !data._id) {
-          throw new Error('Missing original image _id for update');
-        }
+        try {
+          const updatedImage = await updateImage({
+            image: {
+              ...imageData,
+              _id: data._id
+            },
+            userId,
+            path: `/transformations/${data._id}`
+          })
 
-        const updatedImage = await updateImage({
-          image: {
-            ...imageData,
-            _id: data._id
-          },
-          userId,
-          path: `/transformations/${data._id}`
-        })
-
-        if(updatedImage) {
-          router.push(`/transformations/${updatedImage._id}`)
+          if(updatedImage) {
+            router.push(`/transformations/${updatedImage._id}`)
+          }
+        } catch (error) {
+          console.log(error);
         }
       }
-    } catch (err: any) {
-      // IMPORTANT: for debugging, show the exact server response or error
-      console.error('[TransformationForm] submit error:', err);
-      // show user friendly message - replace with your toast if you have one
-      alert('Update failed: ' + (err?.message || 'unknown error. Check console/network.'));
-    } finally {
-      setIsSubmitting(false)
     }
+
+    setIsSubmitting(false)
   }
 
   const onSelectFieldHandler = (value: string, onChangeField: (value: string) => void) => {
