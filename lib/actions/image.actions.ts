@@ -109,7 +109,7 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
     })
 
     // CHANGE TO THIS:
-     let expression = 'resource_type:image';
+     let expression = 'folder=imaginify';
 
     if (searchQuery) {
       expression += ` AND ${searchQuery}`
