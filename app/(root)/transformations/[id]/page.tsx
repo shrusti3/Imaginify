@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation"; // <--- 1. ADD THIS IMPORT
 
 import Header from "@/components/shared/Header";
 import TransformedImage from "@/components/shared/TransformedImage";
@@ -13,6 +14,12 @@ const ImageDetails = async ({ params: { id } }: SearchParamProps) => {
   const { userId } = await auth();
 
   const image = await getImageById(id);
+
+  // 2. ADD THIS SAFETY BLOCK
+  // If the image doesn't exist, redirect to home instead of crashing
+  if (!image) {
+    redirect("/");
+  }
 
   return (
     <>

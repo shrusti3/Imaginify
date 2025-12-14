@@ -15,6 +15,11 @@ const Page = async ({ params: { id } }: SearchParamProps) => {
   const user = await getUserById(userId);
   const image = await getImageById(id);
 
+  // ✅ ADD THIS SAFETY BLOCK
+  if (!image) {
+    redirect("/");
+  }
+
   const transformation =
     transformationTypes[image.transformationType as TransformationTypeKey];
 
