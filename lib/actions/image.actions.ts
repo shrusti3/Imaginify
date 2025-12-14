@@ -84,7 +84,7 @@ export async function getImageById(imageId: string) {
 
     const image = await populateUser(Image.findById(imageId));
 
-    if(!image) throw new Error("Image not found");
+    if(!image) return null;
 
     return JSON.parse(JSON.stringify(image));
   } catch (error) {
@@ -108,7 +108,8 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
       secure: true,
     })
 
-    let expression = 'folder=imaginify';
+    // CHANGE TO THIS:
+     let expression = 'resource_type:image';
 
     if (searchQuery) {
       expression += ` AND ${searchQuery}`
